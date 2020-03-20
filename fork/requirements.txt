@@ -1,0 +1,13 @@
+beautifulsoup4
+certifi
+chardet
+docopt
+idna
+pyasn1
+numpydoc
+sphinxcontrib-apidoc
+pycryptodome
+requests
+soupsieve
+urllib3
+yarg
