@@ -27,7 +27,6 @@ def load_obj(name):
     with open('obj/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-
 @bot.event
 async def on_ready():
     print('Logged in as')
@@ -56,22 +55,35 @@ async def _travail(ctx):
     homeworks = main.homeworks()
     await ctx.send(f"`Début de l'envoi des messages dans le salon` <#{channel_id}> <:pronote:689159558475939911>")
     try:
-        for homework in homeworks:
-            color = homework[4]
-            color = color.replace('#', '')
-            color = int(color, 16)
-            embed = discord.Embed(
-                title=homework[0], description=f"\n**{homework[1]}**\n\n", color=color)
-            embed.set_thumbnail(url="")
-            embed.add_field(name="Travail Fait :",
-                            value=f"**{homework[2]}**", inline=True)
-            embed.add_field(
-                name="Date :", value=f"**{homework[3]}**", inline=True)
-            await channel.send(embed=embed)
+        for index, date in sorted(homeworks.items(), key=lambda item: item[1][3]):
+            homework = homeworks[index]
+            await embed_homeworks(homework, channel)
         await ctx.send(f"`Mise à jour du salon` <#{channel_id}> :white_check_mark:")
     except Exception as e:
-        await ctx.send("`Erreur lors de l'envoi des messages.` :no_entry_sign:\n" + e)
+        await ctx.send("`Erreur lors de l'envoi des messages.` :no_entry_sign:\n" + str(e))
         print(e)
+
+
+@bot.command(name="travailtest", description="Donne les nouveux devoirs.")
+async def _travail(ctx):
+    dict1 = main.homeworks()
+    _temp = []
+    for index, homework in dict1.items():
+        if homework[3] < datetime.date.today():
+            _temp.append(index)
+    for index in _temp:
+        dict1.pop(index)
+    
+    if load_obj("homework_backup") == dict1:
+        return await ctx.send("**Il n'y a pas de nouveaux devoirs !**")
+    else:
+        await ctx.send("**Voici les nouveaux devoirs :**")
+        for dif in main.compare_homeworks(load_obj("homework_backup"), main.homeworks()):
+            await embed_homeworks(dif, ctx.channel)
+        for dif in main.compare_homeworks(main.homeworks(), load_obj("homework_backup")):
+            await embed_homeworks(dif, ctx.channel)
+        save_obj(main.homework_backup, "homework_backup")
+    
 
 
 @bot.command(name="profs", description="Donne la liste des professeurs absents.")
@@ -105,6 +117,22 @@ async def _travail(ctx):
         await ctx.send(f"`Mise à jour du salon` <#{channel_id}> :white_check_mark:")
     except:
         await ctx.send("`Erreur lors de l'envoi des messages.` :no_entry_sign:")
+
+
+async def embed_homeworks(homework, channel):
+    color = homework[4]
+    color = color.replace('#', '')
+    color = int(color, 16)
+    date = datetime.date.strftime(homework[3], "%d/%m/%Y")
+    
+    embed = discord.Embed(
+        title=homework[0], description=f"\n**{homework[1]}**\n\n", color=color)
+    embed.add_field(name="Travail Fait :",
+                    value=f"**{homework[2]}**", inline=True)
+    embed.add_field(
+        name="Date :", value=f"**{date}**", inline=True)
+    
+    await channel.send(embed=embed)
 
 
 bot.run(env_file.get(path='.env')['TOKEN'])
