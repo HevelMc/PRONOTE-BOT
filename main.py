@@ -3,7 +3,8 @@ import env_file
 import pronotepy
 import datetime
 
-client = pronotepy.Client('https://0060013g.index-education.net/pronote/eleve.html?login=true')
+client = pronotepy.Client(
+    'https://0060013g.index-education.net/pronote/eleve.html?login=true')
 if client.login(env_file.get(path='.env')['USERNAME'], env_file.get(path='.env')['PASSWORD']):
     print("Login Successful")
 
@@ -13,6 +14,7 @@ def yes_or_no(boolean: bool):
         return "Oui"
     else:
         return "Non"
+
 
 def homeworks():
     today = datetime.date.today()
@@ -29,9 +31,11 @@ def homeworks():
         desc = homework.description
         desc = desc.replace("&#039;", "\'")
         color = homework.background_color
-        homeworks_list.append([homework.subject.name, desc, yes_or_no(homework.done), date, color])
+        homeworks_list.append(
+            [homework.subject.name, desc, yes_or_no(homework.done), date, color])
     homeworks_list.sort(key=lambda colonnes: colonnes[3])
     return(homeworks_list)
+
 
 def profs_absents():
     today = datetime.date.today()
@@ -45,6 +49,7 @@ def profs_absents():
             timedate = lesson.start
             status = lesson.status
             time = datetime.datetime.strftime(lesson.start, "%d/%m/%Y à %H:%M")
-            profs_absents_list.append([lesson.subject.name, teacher, time, timedate, status])
+            profs_absents_list.append(
+                [lesson.subject.name, teacher, time, timedate, status])
     profs_absents_list.sort(key=lambda colonnes: colonnes[3])
     return(profs_absents_list)
