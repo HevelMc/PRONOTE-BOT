@@ -2,6 +2,7 @@
 import env_file
 import pronotepy
 import datetime
+import html
 
 client = pronotepy.Client(
     'https://0060013g.index-education.net/pronote/eleve.html?login=true')
@@ -9,6 +10,7 @@ if client.login(env_file.get(path='.env')['USERNAME'], env_file.get(path='.env')
     print("Login Successful")
 
 homework_backup = {}
+profs_backup = {}
 
 def yes_or_no(boolean: bool):
     if boolean:
@@ -29,7 +31,7 @@ def homeworks():
 
     for homework in homeworks:
         desc = homework.description
-        desc = desc.replace("&#039;", "\'")
+        desc = html.unescape(desc)
         color = homework.background_color
         homeworks_list[desc] = [homework.subject.name, desc,
                                 yes_or_no(homework.done), homework.date, color]
@@ -39,7 +41,7 @@ def profs_absents():
     today = datetime.date.today()
     amonthlater = today + datetime.timedelta(weeks=32)
     lessons = client.lessons(today, amonthlater)
-    profs_absents_list = []
+    profs_absents_list = {}
 
     for lesson in lessons:
         if lesson.status:
@@ -47,9 +49,10 @@ def profs_absents():
             timedate = lesson.start
             status = lesson.status
             time = datetime.datetime.strftime(lesson.start, "%d/%m/%Y à %H:%M")
-            profs_absents_list.append(
-                [lesson.subject.name, teacher, time, timedate, status])
-    profs_absents_list.sort(key=lambda colonnes: colonnes[3])
+            
+            if not profs_absents_list.get(time):
+                profs_absents_list[time] = [lesson.subject.name, teacher, time, timedate, status]
+
     return(profs_absents_list)
 
 def compare_homeworks(dict1, dict2):
@@ -62,8 +65,24 @@ def compare_homeworks(dict1, dict2):
         dict1.pop(index)
 
     _difs = []
-    for index, backup_homework in dict1.items():
+    for index, _ in dict1.items():
         if dict1.get(index) != dict2.get(index):
             _difs.append(dict1.get(index))
     homework_backup = dict1
+    return _difs
+
+def compare_profs(dict1, dict2):
+    global profs_backup
+    _temp = []
+    for index, absence in dict1.items():
+        if index < datetime.date.today():
+            _temp.append(index)
+    for index in _temp:
+        dict1.pop(index)
+
+    _difs = []
+    for index, _ in dict1.items():
+        if dict1.get(index) != dict2.get(index):
+            _difs.append(dict1.get(index))
+    profs_backup = dict1
     return _difs
