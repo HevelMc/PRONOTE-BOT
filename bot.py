@@ -2,6 +2,8 @@ import datetime
 import os
 import pickle
 import random
+import requests
+import io
 
 import discord
 import env_file
@@ -16,7 +18,7 @@ BLUE_LABEL = ["Report", "Exceptionnel",
               "Changement de salle", "Cours maintenu", "Remplacement"]
 
 description = '''Un bot PRONOTE qui t\'envoi les devoirs à faire.'''
-client = commands.Bot(command_prefix='(p) ', description=description)
+client = commands.Bot(command_prefix='$', description=description)
 
 
 def save_obj(obj, name):
@@ -127,6 +129,22 @@ async def profstest(ctx):
         for dif in main.compare_profs(main.profs_absents(), load_obj("profs_backup")):
             await embed_profs(dif, ctx.channel)
         save_obj(main.profs_backup, "profs_backup")
+
+
+@client.command(description="Ajoute un fichier ou un message au casier.")
+async def casier(ctx, prof: commands.Greedy[discord.Member] = None, *, message_content="Il n'a pas laissé de message."):
+    channel = client.get_channel(691242033049894963)
+    if not prof:
+        await ctx.send("Vous devez mentionner le professeur !")
+    elif message_content == "Il n'a pas laissé de message." and len(ctx.message.attachments) < 1:
+        await ctx.send("Vous devez specifier un message ou donner un document !")
+    else:
+        try:
+            await channel.send(f"Bonjour <@{prof[0].id}>, <@{ctx.author.id}> a laissé un message pour vous:\n\n**{message_content}**", files=[await attachment.to_file() for attachment in ctx.message.attachments])
+            await ctx.send("Message correctement envoyé dans le casier du professeur !")
+        except Exception as e:
+            await ctx.send("Une erreur est survenue, veuillez réessayer.\n" + str(e))
+    await ctx.message.delete()
 
 
 async def embed_homeworks(homework, channel):
